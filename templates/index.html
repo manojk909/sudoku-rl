@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Sudoku RL</title>
+    <style>
+        table { border-collapse: collapse; }
+        td {
+            width: 40px;
+            height: 40px;
+            text-align: center;
+            border: 1px solid black;
+            font-size: 18px;
+        }
+        button { margin: 10px; padding: 10px; }
+    </style>
+</head>
+<body>
+
+<h2>Sudoku RL Environment</h2>
+
+<button onclick="run()">Run Agent</button>
+
+<table id="board"></table>
+
+<p id="info"></p>
+
+<script>
+function createEmptyBoard() {
+    return Array(9).fill().map(() => Array(9).fill(0));
+}
+
+function drawBoard(board) {
+    const table = document.getElementById("board");
+    table.innerHTML = "";
+
+    for (let i = 0; i < 9; i++) {
+        let row = document.createElement("tr");
+
+        for (let j = 0; j < 9; j++) {
+            let cell = document.createElement("td");
+            cell.id = `cell-${i}-${j}`;
+            cell.innerText = board[i][j] === 0 ? "." : board[i][j];
+            row.appendChild(cell);
+        }
+
+        table.appendChild(row);
+    }
+}
+
+function updateCell(r, c, val) {
+    const cell = document.getElementById(`cell-${r}-${c}`);
+    cell.innerText = val;
+
+    // highlight new cell
+    cell.style.backgroundColor = "#90ee90";
+
+    setTimeout(() => {
+        cell.style.backgroundColor = "";
+    }, 300);
+}
+
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+async function animateSteps(steps) {
+    for (let step of steps) {
+        updateCell(step.row, step.col, step.val);
+        await sleep(400); // speed control
+    }
+}
+
+function run() {
+    fetch("/run")
+        .then(res => res.json())
+        .then(async data => {
+            let board = createEmptyBoard();
+            drawBoard(board);
+
+            await animateSteps(data.steps);
+
+            document.getElementById("info").innerText =
+                "Reward: " + data.reward +
+                " | Steps: " + data.steps_count +
+                " | Invalid: " + data.invalid_moves;
+        });
+}
+
+// initial blank board
+window.onload = function() {
+    drawBoard(createEmptyBoard());
+};
+</script>
+
+</body>
+</html>

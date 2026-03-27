@@ -3,6 +3,7 @@
 import numpy as np
 import random
 
+from utils.sudoku_utils import get_valid_actions, is_valid
 
 class HeuristicAgent:
 
@@ -22,29 +23,29 @@ class HeuristicAgent:
         return list(possible)
 
     def act(self, state):
-        best_cell = None
-        best_options = None
+        valid_actions = get_valid_actions(state)
 
-        for row in range(9):
-            for col in range(9):
-                if state[row][col] == 0:
-                    options = self.get_valid_numbers(state, row, col)
+        if not valid_actions:
+            # fallback (rare case)
+            return (
+                random.randint(0, 8),
+                random.randint(0, 8),
+                random.randint(1, 9)
+            )
 
-                    if not options:
-                        continue
+        # Smart choice: pick action from most constrained cell
+        best_action = None
+        min_options = float('inf')
 
-                    if best_options is None or len(options) < len(best_options):
-                        best_options = options
-                        best_cell = (row, col)
+        for (r, c, v) in valid_actions:
+            # count how many options this cell has
+            options = [
+                val for val in range(1, 10)
+                if is_valid(state, r, c, val)
+            ]
 
-        if best_cell:
-            row, col = best_cell
-            val = random.choice(best_options)
-            return (row, col, val)
+            if len(options) < min_options:
+                min_options = len(options)
+                best_action = (r, c, v)
 
-        # fallback
-        return (
-            random.randint(0, 8),
-            random.randint(0, 8),
-            random.randint(1, 9)
-        )
+        return best_action
